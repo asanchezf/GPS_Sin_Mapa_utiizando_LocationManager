@@ -1,8 +1,11 @@
 package com.antonioejemplo.gps_2;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -13,7 +16,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
@@ -29,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private LocationManager manejador;
     private String proveedor;
     private TextView salida;
+    private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         Location localizacion = manejador.getLastKnownLocation(proveedor);
 
         muestraLocaliz(localizacion);
+        muestradireccion(localizacion);
 
     }//fin Oncreate
 
@@ -112,6 +119,68 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         else
             log(localizacion.toString() + "\n");
     }
+
+
+    private void muestradireccion(Location location) {
+
+        this.context = getApplicationContext();
+        //location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+        Geocoder geo;
+
+        double longitud;
+        double latitud;
+        double velocidad;
+        double altitud;
+        String direccion;
+        String calle;
+        String poblacion;
+        String numero;
+        String velocidad_dir;
+
+        if (location != null) {
+            //Devolvemos los datos
+            latitud = location.getLatitude();
+            longitud = location.getLongitude();
+            velocidad = location.getSpeed();
+            altitud = location.getAltitude();
+
+            //PARA OBTENER LA DIRECCIÓN
+            geo = new Geocoder(context, Locale.getDefault());
+
+            try {
+                List<Address> list =
+                        geo.getFromLocation(Double.valueOf(location.getLatitude()),
+                                Double.valueOf(location.getLongitude()), 1);
+
+                if (list != null && list.size() > 0) {
+                    Address address = list.get(0);
+                    direccion = address.getAddressLine(0);
+                    calle = direccion.split(",")[0];
+                    if (direccion.split(",").length == 2) {
+                        numero = direccion.split(",")[1];
+                    }
+
+                    poblacion = address.getLocality();
+
+                    if (poblacion == null) {
+
+                        poblacion = "";
+
+                        velocidad_dir = Float.toString(location.getSpeed());
+
+
+                    }
+
+                    log("Dirección de localización:+ \n "+direccion+ " "+poblacion);
+
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void muestraProveedores() {
         log("Proveedores de localización: \n ");
         List<String> proveedores = manejador.getAllProviders();
@@ -134,6 +203,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 + ", supportsBearing=" + info.supportsBearing()
                 + ", supportsSpeed=" + info.supportsSpeed() + " ]\n");
     }
+
+
 
     /**METODO DE LA INTERFAZ LOCATIONlISTENERSE LLAMA CUANDO CAMBIA LA LOCALIZACIÓN
      * Cuando cambia la localización
@@ -200,3 +271,4 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
 
 }
+
